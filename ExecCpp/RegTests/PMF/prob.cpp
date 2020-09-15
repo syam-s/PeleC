@@ -11,13 +11,13 @@ AMREX_GPU_DEVICE_MANAGED unsigned int pmf_N = 0;
 AMREX_GPU_DEVICE_MANAGED unsigned int pmf_M = 0;
 AMREX_GPU_DEVICE_MANAGED bool pmf_do_average = false;
 
-amrex::Gpu::ManagedVector<amrex::Real>* pmf_X = nullptr;
-amrex::Gpu::ManagedVector<amrex::Real>* pmf_Y = nullptr;
-amrex::Gpu::ManagedVector<amrex::Real>* fuel_state = nullptr;
+amrex::Vector<amrex::Real> pmf_X = {0.0};
+amrex::Vector<amrex::Real> pmf_Y = {0.0};
+amrex::Vector<amrex::Real> fuel_state = {0.0};
 
-AMREX_GPU_DEVICE_MANAGED amrex::Real* d_pmf_X = nullptr;
-AMREX_GPU_DEVICE_MANAGED amrex::Real* d_pmf_Y = nullptr;
-AMREX_GPU_DEVICE_MANAGED amrex::Real* d_fuel_state = nullptr;
+amrex::Gpu::DeviceVector<amrex::Real> d_pmf_X;
+amrex::Gpu::DeviceVector<amrex::Real> d_pmf_Y;
+amrex::Gpu::DeviceVector<amrex::Real> d_fuel_state;
 
 std::string pmf_datafile = "";
 amrex::Vector<std::string> pmf_names;
@@ -95,8 +95,10 @@ read_pmf(const std::string myfile)
 
   ProbParm::pmf_N = line_count;
   ProbParm::pmf_M = variable_count - 1;
-  ProbParm::pmf_X->resize(ProbParm::pmf_N);
-  ProbParm::pmf_Y->resize(ProbParm::pmf_N * ProbParm::pmf_M);
+  ProbParm::pmf_X.resize(ProbParm::pmf_N);
+  ProbParm::pmf_Y.resize(ProbParm::pmf_N * ProbParm::pmf_M);
+  ProbParm::d_pmf_X.resize(ProbParm::pmf_N);
+  ProbParm::d_pmf_Y.resize(ProbParm::pmf_N * ProbParm::pmf_M);
 
   iss.clear();
   iss.seekg(0, std::ios::beg);
@@ -105,13 +107,17 @@ read_pmf(const std::string myfile)
   for (int i = 0; i < ProbParm::pmf_N; i++) {
     std::getline(iss, remaininglines);
     std::istringstream sinput(remaininglines);
-    sinput >> (*ProbParm::pmf_X)[i];
+    sinput >> ProbParm::pmf_X[i];
     for (int j = 0; j < ProbParm::pmf_M; j++) {
-      sinput >> (*ProbParm::pmf_Y)[j * ProbParm::pmf_N + i];
+      sinput >> ProbParm::pmf_Y[j * ProbParm::pmf_N + i];
     }
   }
-  ProbParm::d_pmf_X = ProbParm::pmf_X->dataPtr();
-  ProbParm::d_pmf_Y = ProbParm::pmf_Y->dataPtr();
+  amrex::Gpu::copy(
+      amrex::Gpu::hostToDevice, ProbParm::pmf_X.begin(),
+      ProbParm::pmf_X.end(), ProbParm::d_pmf_X.begin());
+  amrex::Gpu::copy(
+      amrex::Gpu::hostToDevice, ProbParm::pmf_Y.begin(),
+      ProbParm::pmf_Y.end(), ProbParm::d_pmf_Y.begin());
 }
 
 void
@@ -150,33 +156,24 @@ init_bc()
   vt = ProbParm::vn_in;
   ek = 0.5 * (vt * vt);
 
-  (*ProbParm::fuel_state)[URHO] = rho;
-  (*ProbParm::fuel_state)[UMX] = 0.0;
-  (*ProbParm::fuel_state)[UMY] = rho * vt;
-  (*ProbParm::fuel_state)[UMZ] = 0.0;
-  (*ProbParm::fuel_state)[UEINT] = rho * e;
-  (*ProbParm::fuel_state)[UEDEN] = rho * (e + ek);
-  (*ProbParm::fuel_state)[UTEMP] = T;
+  ProbParm::fuel_state[URHO] = rho;
+  ProbParm::fuel_state[UMX] = 0.0;
+  ProbParm::fuel_state[UMY] = rho * vt;
+  ProbParm::fuel_state[UMZ] = 0.0;
+  ProbParm::fuel_state[UEINT] = rho * e;
+  ProbParm::fuel_state[UEDEN] = rho * (e + ek);
+  ProbParm::fuel_state[UTEMP] = T;
   for (int n = 0; n < NUM_SPECIES; n++) {
-    (*ProbParm::fuel_state)[UFS + n - 1] = rho * massfrac[n];
+    ProbParm::fuel_state[UFS + n - 1] = rho * massfrac[n];
   }
-  ProbParm::d_fuel_state = ProbParm::fuel_state->dataPtr();
+  amrex::Gpu::copy(
+      amrex::Gpu::hostToDevice, ProbParm::fuel_state.begin(),
+      ProbParm::fuel_state.end(), ProbParm::d_fuel_state.begin());
 }
 
 void
 pc_prob_close()
-{
-  delete ProbParm::pmf_X;
-  delete ProbParm::pmf_Y;
-  delete ProbParm::fuel_state;
-
-  ProbParm::pmf_X = nullptr;
-  ProbParm::pmf_Y = nullptr;
-  ProbParm::fuel_state = nullptr;
-  ProbParm::d_pmf_X = nullptr;
-  ProbParm::d_pmf_Y = nullptr;
-  ProbParm::d_fuel_state = nullptr;
-}
+{}
 
 extern "C" {
 void
@@ -199,10 +196,8 @@ amrex_probinit(
   ProbParm::L[1] = probhi[1] - problo[1];
   ProbParm::L[2] = probhi[2] - problo[2];
 
-  ProbParm::pmf_X = new amrex::Gpu::ManagedVector<amrex::Real>;
-  ProbParm::pmf_Y = new amrex::Gpu::ManagedVector<amrex::Real>;
-  ProbParm::fuel_state = new amrex::Gpu::ManagedVector<amrex::Real>;
-  ProbParm::fuel_state->resize(NVAR);
+  ProbParm::fuel_state.resize(NVAR);
+  ProbParm::d_fuel_state.resize(NVAR);
 
   read_pmf(ProbParm::pmf_datafile);
 

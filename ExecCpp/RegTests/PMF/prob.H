@@ -11,7 +11,6 @@
 #include "EOS.H"
 #include "Tagging.H"
 #include "ProblemDerive.H"
-#include "prob_parm.H"
 #include "Constants.H"
 
 namespace ProbParm {
@@ -25,13 +24,13 @@ extern AMREX_GPU_DEVICE_MANAGED unsigned int pmf_N;
 extern AMREX_GPU_DEVICE_MANAGED unsigned int pmf_M;
 extern AMREX_GPU_DEVICE_MANAGED bool pmf_do_average;
 
-extern amrex::Gpu::ManagedVector<amrex::Real>* pmf_X;
-extern amrex::Gpu::ManagedVector<amrex::Real>* pmf_Y;
-extern amrex::Gpu::ManagedVector<amrex::Real>* fuel_state;
+extern amrex::Vector<amrex::Real> pmf_X;
+extern amrex::Vector<amrex::Real> pmf_Y;
+extern amrex::Vector<amrex::Real> fuel_state;
 
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real* d_pmf_X;
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real* d_pmf_Y;
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real* d_fuel_state;
+extern amrex::Gpu::DeviceVector<amrex::Real> d_pmf_X;
+extern amrex::Gpu::DeviceVector<amrex::Real> d_pmf_Y;
+extern amrex::Gpu::DeviceVector<amrex::Real> d_fuel_state;
 
 extern std::string pmf_datafile;
 extern amrex::Vector<std::string> pmf_names;
