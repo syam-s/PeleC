@@ -76,6 +76,8 @@
 // This value was hardcoded to 4 in get_method_params in the old Fortran code
 #define NUM_GROW 4
 
+static constexpr int max_prob_param = 20;
+
 namespace indxmap {
 
 extern AMREX_GPU_DEVICE_MANAGED int qpassMap[NPASSIVE];
