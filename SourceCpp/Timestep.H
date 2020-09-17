@@ -18,7 +18,7 @@ namespace TimeStep {
 constexpr amrex::Real max_dt = 1.e37;
 } // namespace TimeStep
 
-AMREX_GPU_DEVICE
+AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 void
 pc_trans4dt(
@@ -44,21 +44,7 @@ pc_trans4dt(
   }
 }
 
-AMREX_GPU_DEVICE
-// Diffusion Enthalpy
-AMREX_GPU_DEVICE
-AMREX_FORCE_INLINE
-amrex::Real pc_estdt_enthdif(
-  amrex::Box const bx,
-  const amrex::Array4<const amrex::Real>& u,
-#ifdef PELEC_USE_EB
-  const amrex::Array4<const amrex::EBCellFlag>& flags,
-#endif
-  AMREX_D_DECL(
-    const amrex::Real& dx,
-    const amrex::Real& dy,
-    const amrex::Real& dz)) noexcept;
-AMREX_GPU_DEVICE
+AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
 pc_estdt_hydro(
@@ -103,7 +89,7 @@ pc_estdt_hydro(
 }
 
 // Diffusion Velocity
-AMREX_GPU_DEVICE
+AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
 pc_estdt_veldif(
@@ -151,7 +137,7 @@ pc_estdt_veldif(
 }
 
 // Diffusion Temperature
-AMREX_GPU_DEVICE
+AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
 pc_estdt_tempdif(
@@ -200,7 +186,7 @@ pc_estdt_tempdif(
 }
 
 // Diffusion Enthalpy
-AMREX_GPU_DEVICE
+AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE
 amrex::Real
 pc_estdt_enthdif(
