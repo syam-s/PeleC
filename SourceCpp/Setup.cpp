@@ -130,7 +130,7 @@ PeleC::variableSetUp()
 
   EOS::init();
 
-  init_transport();
+  transport::transport_init(transport_parm_real);
 
 #ifdef PELEC_USE_REACTIONS
   // Initialize the reactor

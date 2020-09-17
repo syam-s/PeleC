@@ -114,12 +114,14 @@ ebInitialized(bool eb_init_val)
 }
 #endif
 
+amrex::GpuArray<amrex::Real, max_prob_param> PeleC::transport_parm_real;
+
 void
 PeleC::variableCleanUp()
 {
   desc_lst.clear();
 
-  transport_close();
+  transport::transport_close();
 
   EOS::close();
 
@@ -663,9 +665,11 @@ PeleC::initData()
     auto sfab = S_new.array(mfi);
     const auto geomdata = geom.data();
 
-    amrex::GpuArray<amrex::Real,max_prob_param> prob_parm_real;
-    amrex::GpuArray<bool,max_prob_param> prob_parm_bool;
-    prob_param_fill(geomdata, prob_parm_real, prob_parm_bool);
+    amrex::GpuArray<amrex::Real, max_prob_param> prob_parm_real;
+    amrex::GpuArray<bool, max_prob_param> prob_parm_bool;
+    amrex::GpuArray<amrex::Real, max_prob_param> transport_parm_real;
+    prob_param_fill(
+      geomdata, prob_parm_real, prob_parm_bool, transport_parm_real);
 
     amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
       pc_initdata(i, j, k, sfab, geomdata, prob_parm_real, prob_parm_bool);
@@ -1860,12 +1864,6 @@ PeleC::close_reactor()
 {
 }
 #endif
-
-void
-PeleC::init_transport()
-{
-  transport_init();
-}
 
 void
 PeleC::init_les()

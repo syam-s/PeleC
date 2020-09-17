@@ -33,11 +33,14 @@ enum ProbCompReal {
   v0
 };
 
-enum ProbCompBool {
-  convecting = 0
-};
+enum ProbCompBool { convecting = 0 };
 
-static void prob_param_fill(amrex::GeometryData const& geomdata, amrex::GpuArray<amrex::Real,max_prob_param>& prob_parm_real, amrex::GpuArray<bool,max_prob_param>& prob_parm_bool)
+static void
+prob_param_fill(
+  amrex::GeometryData const& geomdata,
+  amrex::GpuArray<amrex::Real, max_prob_param>& prob_parm_real,
+  amrex::GpuArray<bool, max_prob_param>& prob_parm_bool,
+  amrex::GpuArray<amrex::Real, max_prob_param>& transport_parm_real)
 {
   const amrex::Real* prob_lo = geomdata.ProbLo();
   const amrex::Real* prob_hi = geomdata.ProbHi();
@@ -77,17 +80,20 @@ static void prob_param_fill(amrex::GeometryData const& geomdata, amrex::GpuArray
   // Initial density, velocity, and material properties
   amrex::Real eint, cs, cp;
   amrex::Real massfrac[NUM_SPECIES] = {1.0};
-  EOS::PYT2RE(prob_parm_real[p0], massfrac, prob_parm_real[T0], prob_parm_real[rho0], eint);
+  EOS::PYT2RE(
+    prob_parm_real[p0], massfrac, prob_parm_real[T0], prob_parm_real[rho0],
+    eint);
   EOS::RTY2Cs(prob_parm_real[rho0], prob_parm_real[T0], massfrac, cs);
   EOS::TY2Cp(prob_parm_real[T0], massfrac, cp);
 
   prob_parm_real[v0] = prob_parm_real[mach] * cs;
-  transport_params::const_bulk_viscosity = 0.0;
-  transport_params::const_diffusivity = 0.0;
-  transport_params::const_viscosity =
-    prob_parm_real[rho0] * prob_parm_real[v0] * prob_parm_real[L] / prob_parm_real[reynolds];
-  transport_params::const_conductivity =
-    transport_params::const_viscosity * cp / prob_parm_real[prandtl];
+  transport_parm_real[const_bulk_viscosity] = 0.0;
+  transport_parm_real[const_diffusivity] = 0.0;
+  transport_parm_real[const_viscosity] =
+    prob_parm_real[rho0] * prob_parm_real[v0] * prob_parm_real[L] /
+    prob_parm_real[reynolds];
+  transport_parm_real[const_conductivity] =
+    transport_parm_real[const_viscosity] * cp / prob_parm_real[prandtl];
 
   // Output IC
   std::ofstream ofs("ic.txt", std::ofstream::out);
@@ -95,13 +101,14 @@ static void prob_param_fill(amrex::GeometryData const& geomdata, amrex::GpuArray
                        "Mach, Prandtl, omega_x, omega_y, omega_z"
                     << std::endl;
   amrex::Print(ofs).SetPrecision(17)
-    << prob_parm_real[L] << "," << prob_parm_real[rho0] << "," << prob_parm_real[v0] << ","
-    << prob_parm_real[p0] << "," << prob_parm_real[T0] << "," << EOS::gamma << ","
-    << transport_params::const_viscosity << ","
-    << transport_params::const_conductivity << "," << cs << ","
-    << prob_parm_real[reynolds] << "," << prob_parm_real[mach] << "," << prob_parm_real[prandtl]
-    << "," << prob_parm_real[omega_x] << "," << prob_parm_real[omega_y] << ","
-    << prob_parm_real[omega_z] << std::endl;
+    << prob_parm_real[L] << "," << prob_parm_real[rho0] << ","
+    << prob_parm_real[v0] << "," << prob_parm_real[p0] << ","
+    << prob_parm_real[T0] << "," << EOS::gamma << ","
+    << transport_parm_real[const_viscosity] << ","
+    << transport_parm_real[const_conductivity] << "," << cs << ","
+    << prob_parm_real[reynolds] << "," << prob_parm_real[mach] << ","
+    << prob_parm_real[prandtl] << "," << prob_parm_real[omega_x] << ","
+    << prob_parm_real[omega_y] << "," << prob_parm_real[omega_z] << std::endl;
   ofs.close();
 }
 
@@ -114,8 +121,8 @@ pc_initdata(
   int k,
   amrex::Array4<amrex::Real> const& state,
   amrex::GeometryData const& geomdata,
-  const amrex::GpuArray<amrex::Real,max_prob_param>& prob_parm_real,
-  const amrex::GpuArray<bool,max_prob_param>& prob_parm_bool)
+  const amrex::GpuArray<amrex::Real, max_prob_param>& prob_parm_real,
+  const amrex::GpuArray<bool, max_prob_param>& prob_parm_bool)
 {
   // Geometry
   const amrex::Real* prob_lo = geomdata.ProbLo();
@@ -130,10 +137,12 @@ pc_initdata(
 
   // TG functions
   amrex::Real u[3] = {0.0};
-  u[0] = prob_parm_real[v0] * sin(prob_parm_real[omega_x] * x / prob_parm_real[L]) *
+  u[0] = prob_parm_real[v0] *
+         sin(prob_parm_real[omega_x] * x / prob_parm_real[L]) *
          cos(prob_parm_real[omega_y] * y / prob_parm_real[L]) *
          cos(prob_parm_real[omega_z] * z / prob_parm_real[L]);
-  u[1] = -prob_parm_real[v0] * cos(prob_parm_real[omega_x] * x / prob_parm_real[L]) *
+  u[1] = -prob_parm_real[v0] *
+         cos(prob_parm_real[omega_x] * x / prob_parm_real[L]) *
          sin(prob_parm_real[omega_y] * y / prob_parm_real[L]) *
          cos(prob_parm_real[omega_z] * z / prob_parm_real[L]);
   if (prob_parm_bool[convecting]) {
@@ -141,10 +150,11 @@ pc_initdata(
     u[1] += prob_parm_real[v0];
   }
   const amrex::Real p =
-    prob_parm_real[p0] + prob_parm_real[rho0] * prob_parm_real[v0] * prob_parm_real[v0] / 16.0 *
-                     (cos(2.0 * prob_parm_real[omega_x] * x / prob_parm_real[L]) +
-                      cos(2.0 * prob_parm_real[omega_y] * y / prob_parm_real[L])) *
-                     (cos(2.0 * prob_parm_real[omega_z] * z / prob_parm_real[L]) + 2.0);
+    prob_parm_real[p0] +
+    prob_parm_real[rho0] * prob_parm_real[v0] * prob_parm_real[v0] / 16.0 *
+      (cos(2.0 * prob_parm_real[omega_x] * x / prob_parm_real[L]) +
+       cos(2.0 * prob_parm_real[omega_y] * y / prob_parm_real[L])) *
+      (cos(2.0 * prob_parm_real[omega_z] * z / prob_parm_real[L]) + 2.0);
   amrex::Real rho, eint;
   amrex::Real massfrac[NUM_SPECIES] = {1.0};
   EOS::PYT2RE(p, massfrac, prob_parm_real[T0], rho, eint);

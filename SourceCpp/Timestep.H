@@ -33,12 +33,12 @@ pc_trans4dt(
 
   if (which_trans == 0) {
     get_mu = true;
-    transport(
+    transport::transport(
       get_xi, get_mu, get_lam, get_Ddiag, T, rho, massfrac, nullptr, D, dum1,
       dum2);
   } else if (which_trans == 1) {
     get_lam = true;
-    transport(
+    transport::transport(
       get_xi, get_mu, get_lam, get_Ddiag, T, rho, massfrac, nullptr, dum1, dum2,
       D);
   }

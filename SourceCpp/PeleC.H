@@ -635,8 +635,6 @@ protected:
   static void close_reactor();
 #endif
 
-  static void init_transport();
-
   void init_les();
   void init_filters();
 
@@ -777,6 +775,7 @@ protected:
 #endif
   static bool do_react_load_balance;
   static bool do_mol_load_balance;
+  static amrex::GpuArray<amrex::Real, max_prob_param> transport_parm_real;
 };
 
 void pc_bcfill_hyp(
