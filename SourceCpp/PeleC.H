@@ -646,7 +646,9 @@ protected:
 
   static void read_params();
 
-  static void read_tagging_params();
+  static void read_tagging_params(
+    amrex::GpuArray<amrex::Real, max_prob_param>& tagging_parm_real,
+    amrex::GpuArray<int, max_prob_param>& tagging_parm_int);
 
   PeleC& getLevel(int lev);
 
@@ -776,6 +778,8 @@ protected:
   static bool do_react_load_balance;
   static bool do_mol_load_balance;
   static amrex::GpuArray<amrex::Real, max_prob_param> transport_parm_real;
+  static amrex::GpuArray<amrex::Real, max_prob_param> tagging_parm_real;
+  static amrex::GpuArray<int, max_prob_param> tagging_parm_int;
 };
 
 void pc_bcfill_hyp(

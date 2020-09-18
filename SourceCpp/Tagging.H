@@ -6,38 +6,35 @@
 #include <AMReX_FArrayBox.H>
 #include <AMReX_TagBox.H>
 
-namespace TaggingParm {
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real denerr;
-extern AMREX_GPU_DEVICE_MANAGED int max_denerr_lev;
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real dengrad;
-extern AMREX_GPU_DEVICE_MANAGED int max_dengrad_lev;
+enum TaggingCompReal {
+  denerr = 0,
+  presserr,
+  velerr,
+  vorterr,
+  temperr,
+  ftracerr,
+  vfracerr,
+  dengrad,
+  pressgrad,
+  velgrad,
+  tempgrad,
+  ftracgrad
+};
 
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real presserr;
-extern AMREX_GPU_DEVICE_MANAGED int max_presserr_lev;
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real pressgrad;
-extern AMREX_GPU_DEVICE_MANAGED int max_pressgrad_lev;
-
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real velerr;
-extern AMREX_GPU_DEVICE_MANAGED int max_velerr_lev;
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real velgrad;
-extern AMREX_GPU_DEVICE_MANAGED int max_velgrad_lev;
-
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real vorterr;
-extern AMREX_GPU_DEVICE_MANAGED int max_vorterr_lev;
-
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real temperr;
-extern AMREX_GPU_DEVICE_MANAGED int max_temperr_lev;
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real tempgrad;
-extern AMREX_GPU_DEVICE_MANAGED int max_tempgrad_lev;
-
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real ftracerr;
-extern AMREX_GPU_DEVICE_MANAGED int max_ftracerr_lev;
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real ftracgrad;
-extern AMREX_GPU_DEVICE_MANAGED int max_ftracgrad_lev;
-
-extern AMREX_GPU_DEVICE_MANAGED amrex::Real vfracerr;
-extern AMREX_GPU_DEVICE_MANAGED int max_vfracerr_lev;
-} // namespace TaggingParm
+enum TaggingCompInt {
+  max_denerr_lev = 0,
+  max_presserr_lev,
+  max_velerr_lev,
+  max_temperr_lev,
+  max_ftracerr_lev,
+  max_vfracerr_lev,
+  max_dengrad_lev,
+  max_pressgrad_lev,
+  max_velgrad_lev,
+  max_vorterr_lev,
+  max_tempgrad_lev,
+  max_ftracgrad_lev
+};
 
 AMREX_GPU_HOST_DEVICE
 AMREX_FORCE_INLINE

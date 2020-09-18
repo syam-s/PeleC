@@ -115,6 +115,8 @@ ebInitialized(bool eb_init_val)
 #endif
 
 amrex::GpuArray<amrex::Real, max_prob_param> PeleC::transport_parm_real;
+amrex::GpuArray<amrex::Real, max_prob_param> PeleC::tagging_parm_real;
+amrex::GpuArray<int, max_prob_param> PeleC::tagging_parm_int;
 
 void
 PeleC::variableCleanUp()
@@ -342,7 +344,7 @@ PeleC::read_params()
 #endif
 
   // Read tagging parameters
-  read_tagging_params();
+  read_tagging_params(tagging_parm_real, tagging_parm_int);
 
   // TODO: What is this?
   amrex::StateDescriptor::setBndryFuncThreadSafety(bndry_func_thread_safe);
@@ -1582,16 +1584,18 @@ PeleC::errorEst(
       const int* bc = bcs[0].data();
 
       // Tagging density
-      if (level < TaggingParm::max_denerr_lev) {
+      if (level < tagging_parm_int[max_denerr_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            tag_error(i, j, k, tag_arr, Sfab, TaggingParm::denerr, tagval);
+            tag_error(
+              i, j, k, tag_arr, Sfab, tagging_parm_real[denerr], tagval);
           });
       }
-      if (level < TaggingParm::max_dengrad_lev) {
+      if (level < tagging_parm_int[max_dengrad_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            tag_graderror(i, j, k, tag_arr, Sfab, TaggingParm::dengrad, tagval);
+            tag_graderror(
+              i, j, k, tag_arr, Sfab, tagging_parm_real[dengrad], tagval);
           });
       }
 
@@ -1600,18 +1604,18 @@ PeleC::errorEst(
       pc_derpres(
         datbox, S_derData, ncp, Sfab.nComp(), S_data[mfi], geom, time, bc,
         level);
-      if (level < TaggingParm::max_presserr_lev) {
+      if (level < tagging_parm_int[max_presserr_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_error(
-              i, j, k, tag_arr, S_derarr, TaggingParm::presserr, tagval);
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[presserr], tagval);
           });
       }
-      if (level < TaggingParm::max_pressgrad_lev) {
+      if (level < tagging_parm_int[max_pressgrad_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_graderror(
-              i, j, k, tag_arr, S_derarr, TaggingParm::pressgrad, tagval);
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[pressgrad], tagval);
           });
       }
 
@@ -1620,17 +1624,18 @@ PeleC::errorEst(
       pc_dervelx(
         datbox, S_derData, ncp, Sfab.nComp(), S_data[mfi], geom, time, bc,
         level);
-      if (level < TaggingParm::max_velerr_lev) {
+      if (level < tagging_parm_int[max_velerr_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            tag_error(i, j, k, tag_arr, S_derarr, TaggingParm::velerr, tagval);
+            tag_error(
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[velerr], tagval);
           });
       }
-      if (level < TaggingParm::max_velgrad_lev) {
+      if (level < tagging_parm_int[max_velgrad_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_graderror(
-              i, j, k, tag_arr, S_derarr, TaggingParm::velgrad, tagval);
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[velgrad], tagval);
           });
       }
 
@@ -1639,17 +1644,18 @@ PeleC::errorEst(
       pc_dervely(
         datbox, S_derData, ncp, Sfab.nComp(), S_data[mfi], geom, time, bc,
         level);
-      if (level < TaggingParm::max_velerr_lev) {
+      if (level < tagging_parm_int[max_velerr_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            tag_error(i, j, k, tag_arr, S_derarr, TaggingParm::velerr, tagval);
+            tag_error(
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[velerr], tagval);
           });
       }
-      if (level < TaggingParm::max_velgrad_lev) {
+      if (level < tagging_parm_int[max_velgrad_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_graderror(
-              i, j, k, tag_arr, S_derarr, TaggingParm::velgrad, tagval);
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[velgrad], tagval);
           });
       }
 
@@ -1658,17 +1664,18 @@ PeleC::errorEst(
       pc_dervelz(
         datbox, S_derData, ncp, Sfab.nComp(), S_data[mfi], geom, time, bc,
         level);
-      if (level < TaggingParm::max_velerr_lev) {
+      if (level < tagging_parm_int[max_velerr_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            tag_error(i, j, k, tag_arr, S_derarr, TaggingParm::velerr, tagval);
+            tag_error(
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[velerr], tagval);
           });
       }
-      if (level < TaggingParm::max_velgrad_lev) {
+      if (level < tagging_parm_int[max_velgrad_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_graderror(
-              i, j, k, tag_arr, S_derarr, TaggingParm::velgrad, tagval);
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[velgrad], tagval);
           });
       }
 
@@ -1677,8 +1684,9 @@ PeleC::errorEst(
       pc_dermagvort(
         tilebox, S_derData, ncp, Sfab.nComp(), S_data[mfi], geom, time, bc,
         level);
-      if (level < TaggingParm::max_vorterr_lev) {
-        const amrex::Real vorterr = TaggingParm::vorterr * std::pow(2.0, level);
+      if (level < tagging_parm_int[max_vorterr_lev]) {
+        const amrex::Real vorterr =
+          tagging_parm_real[vorterr] * std::pow(2.0, level);
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_abserror(i, j, k, tag_arr, S_derarr, vorterr, tagval);
@@ -1690,17 +1698,18 @@ PeleC::errorEst(
       pc_dertemp(
         datbox, S_derData, ncp, Sfab.nComp(), S_data[mfi], geom, time, bc,
         level);
-      if (level < TaggingParm::max_temperr_lev) {
+      if (level < tagging_parm_int[max_temperr_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            tag_error(i, j, k, tag_arr, S_derarr, TaggingParm::temperr, tagval);
+            tag_error(
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[temperr], tagval);
           });
       }
-      if (level < TaggingParm::max_tempgrad_lev) {
+      if (level < tagging_parm_int[max_tempgrad_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_graderror(
-              i, j, k, tag_arr, S_derarr, TaggingParm::tempgrad, tagval);
+              i, j, k, tag_arr, S_derarr, tagging_parm_real[tempgrad], tagval);
           });
       }
 
@@ -1723,18 +1732,20 @@ PeleC::errorEst(
             datbox, S_derData, ncp, Sfab.nComp(), S_data[mfi], geom, time, bc,
             level, idx);
 
-          if (level < TaggingParm::max_ftracerr_lev) {
+          if (level < tagging_parm_int[max_ftracerr_lev]) {
             amrex::ParallelFor(
               tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 tag_error(
-                  i, j, k, tag_arr, S_derarr, TaggingParm::ftracerr, tagval);
+                  i, j, k, tag_arr, S_derarr, tagging_parm_real[ftracerr],
+                  tagval);
               });
           }
-          if (level < TaggingParm::max_ftracgrad_lev) {
+          if (level < tagging_parm_int[max_ftracgrad_lev]) {
             amrex::ParallelFor(
               tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
                 tag_graderror(
-                  i, j, k, tag_arr, S_derarr, TaggingParm::ftracgrad, tagval);
+                  i, j, k, tag_arr, S_derarr, tagging_parm_real[ftracgrad],
+                  tagval);
               });
           }
 
@@ -1745,7 +1756,7 @@ PeleC::errorEst(
 
 #ifdef PELEC_USE_EB
       // Tagging volume fraction
-      if (level < TaggingParm::max_vfracerr_lev) {
+      if (level < tagging_parm_int[max_vfracerr_lev]) {
         amrex::ParallelFor(
           tilebox, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             tag_error_bounds(i, j, k, tag_arr, vfrac_arr, 0.0, 1.0, tagval);
