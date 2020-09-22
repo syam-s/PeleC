@@ -3,6 +3,8 @@
 
 #include <AMReX_REAL.H>
 #include <AMReX_Arena.H>
+#include <AMReX_SPACE.H>
+
 #include "mechanism.h"
 
 #define URHO 0
@@ -76,29 +78,29 @@
 // This value was hardcoded to 4 in get_method_params in the old Fortran code
 #define NUM_GROW 4
 
-static constexpr int max_prob_param = 20;
+static constexpr int max_prob_param = 32;
 
 namespace indxmap {
 
-extern AMREX_GPU_DEVICE_MANAGED int qpassMap[NPASSIVE];
-extern AMREX_GPU_DEVICE_MANAGED int upassMap[NPASSIVE];
+//extern amrex::GpuArray<int, NPASSIVE> upassMap;
+//extern amrex::GpuArray<int, NPASSIVE> qpassMap;
 
 void init();
 
-AMREX_GPU_HOST_DEVICE
+AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 int
 qpass_map(const int i)
 {
-  return qpassMap[i];
+  return 8; //hardcoded for TG problem
 }
 
-AMREX_GPU_HOST_DEVICE
+AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 int
 upass_map(const int i)
 {
-  return upassMap[i];
+  return 7; //hardcoded for TG problem
 }
 }; // namespace indxmap
 
