@@ -1,13 +1,13 @@
 #include "PeleC.H"
 #include "Forcing.H"
-
+/*
 namespace forcing_params {
 AMREX_GPU_DEVICE_MANAGED amrex::Real u0 = 0.0;
 AMREX_GPU_DEVICE_MANAGED amrex::Real v0 = 0.0;
 AMREX_GPU_DEVICE_MANAGED amrex::Real w0 = 0.0;
 AMREX_GPU_DEVICE_MANAGED amrex::Real forcing = 0.0;
 } // namespace forcing_params
-
+*/
 void
 PeleC::construct_old_forcing_source(amrex::Real time, amrex::Real dt)
 {
@@ -81,12 +81,15 @@ PeleC::fill_forcing_source(
 
     // Evaluate the linear forcing term
     amrex::ParallelFor(bx, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-      src(i, j, k, UMX) = forcing_params::forcing * sarr(i, j, k, URHO) *
+      /*src(i, j, k, UMX) = forcing_params::forcing * sarr(i, j, k, URHO) *
                           (sarr(i, j, k, UMX) - forcing_params::u0);
       src(i, j, k, UMY) = forcing_params::forcing * sarr(i, j, k, URHO) *
                           (sarr(i, j, k, UMY) - forcing_params::v0);
       src(i, j, k, UMZ) = forcing_params::forcing * sarr(i, j, k, URHO) *
-                          (sarr(i, j, k, UMZ) - forcing_params::w0);
+                          (sarr(i, j, k, UMZ) - forcing_params::w0);*/
+      src(i, j, k, UMX) = 0.0 * sarr(i, j, k, URHO) * (sarr(i, j, k, UMX) - 0.0);
+      src(i, j, k, UMY) = 0.0 * sarr(i, j, k, URHO) * (sarr(i, j, k, UMY) - 0.0);
+      src(i, j, k, UMZ) = 0.0 * sarr(i, j, k, URHO) * (sarr(i, j, k, UMZ) - 0.0);
     });
   }
 }
