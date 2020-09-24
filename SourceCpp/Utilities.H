@@ -379,7 +379,7 @@ sort(T& vec)
     }
   });
 }
-
+/*
 // Return vector of unique elements in input. Assume input is sorted. This is
 // device safe code
 template <typename T>
@@ -432,7 +432,7 @@ unique(T input)
 
   return output;
 }
-
+*/
 // -----------------------------------------------------------
 // Search for the closest index in an array to a given value
 // using the bisection technique.
