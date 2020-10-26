@@ -82,26 +82,52 @@ static constexpr int max_prob_param = 32;
 
 namespace indxmap {
 
-//extern amrex::GpuArray<int, NPASSIVE> upassMap;
-//extern amrex::GpuArray<int, NPASSIVE> qpassMap;
-
-void init();
-
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 int
-qpass_map(const int i)
+qpass_map(const int index)
 {
-  return 8; //hardcoded for TG problem
+  amrex::GpuArray<int, NPASSIVE> qpassMap;
+  AMREX_D_PICK(qpassMap[0] = QV; qpassMap[1] = QW; int curMapIndx = 2;
+               , qpassMap[0] = QW; int curMapIndx = 1;, int curMapIndx = 0;);
+  for (int i = 0; i < NUM_ADV; i++) {
+    qpassMap[curMapIndx] = i + QFA;
+    curMapIndx++;
+  }
+  for (int i = 0; i < NUM_SPECIES; i++) {
+    qpassMap[curMapIndx] = i + QFS;
+    curMapIndx++;
+  }
+  for (int i = 0; i < NUM_AUX; i++) {
+    qpassMap[curMapIndx] = i + QFX;
+    curMapIndx++;
+  }
+  return qpassMap[index];
 }
 
 AMREX_GPU_DEVICE
 AMREX_FORCE_INLINE
 int
-upass_map(const int i)
+upass_map(const int index)
 {
-  return 7; //hardcoded for TG problem
+  amrex::GpuArray<int, NPASSIVE> upassMap;
+  AMREX_D_PICK(upassMap[0] = UMY; upassMap[1] = UMZ; int curMapIndx = 2;
+               , upassMap[0] = UMZ; int curMapIndx = 1;, int curMapIndx = 0;);
+  for (int i = 0; i < NUM_ADV; i++) {
+    upassMap[curMapIndx] = i + UFA;
+    curMapIndx++;
+  }
+  for (int i = 0; i < NUM_SPECIES; i++) {
+    upassMap[curMapIndx] = i + UFS;
+    curMapIndx++;
+  }
+  for (int i = 0; i < NUM_AUX; i++) {
+    upassMap[curMapIndx] = i + UFX;
+    curMapIndx++;
+  }
+  return upassMap[index];
 }
+
 }; // namespace indxmap
 
 #endif
