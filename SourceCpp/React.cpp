@@ -68,9 +68,6 @@ PeleC::react_state(
   amrex::MultiFab& reactions = get_new_data(Reactions_Type);
   reactions.setVal(0.0);
   prefetchToDevice(reactions);
-  if (use_reactions_work_estimate) {
-    amrex::Abort("Need to implement redistribution of chemistry work");
-  }
 
 #ifdef PELEC_USE_EB
   auto const& fact =
@@ -86,6 +83,7 @@ PeleC::react_state(
          ++mfi) {
 
       const amrex::Box& bx = mfi.growntilebox(ng);
+      const amrex::Box vbox = mfi.tilebox();
 
       auto const& uold =
         react_init ? S_new.array(mfi) : get_old_data(State_Type).array(mfi);
@@ -98,10 +96,17 @@ PeleC::react_state(
       const int do_update =
         react_init ? 0 : 1; // TODO: Update here? Or just get reaction source?
 
+      amrex::Real wt =
+        amrex::ParallelDescriptor::second(); // timing for each fab
 #ifdef PELEC_USE_EB
       const auto& flag_fab = flags[mfi];
       amrex::FabType typ = flag_fab.getType(bx);
       if (typ == amrex::FabType::covered) {
+        if (do_react_load_balance) {
+          wt = 0.0;
+          get_new_data(Work_Estimate_Type)[mfi].plus<amrex::RunOn::Device>(
+            wt, vbox);
+        }
         continue;
       } else if (
         typ == amrex::FabType::singlevalued || typ == amrex::FabType::regular)
@@ -133,7 +138,7 @@ PeleC::react_state(
           amrex::Real* re_in;
           amrex::Real* re_src_in;
 
-#ifdef USE_CUDA_SUNDIALS_PP
+#ifdef AMREX_USE_CUDA
           cudaError_t cuda_status = cudaSuccess;
           cudaMallocManaged(
             &rY_in, (NUM_SPECIES + 1) * ncells * sizeof(amrex::Real));
@@ -193,21 +198,21 @@ PeleC::react_state(
               re_src_in[offset] = rhoedot_ext;
             });
 
-#ifdef USE_CUDA_SUNDIALS_PP
+#ifdef AMREX_USE_CUDA
           cuda_status = cudaStreamSynchronize(amrex::Gpu::gpuStream());
 #endif
           fabcost = 0.0;
           for (int i = 0; i < ncells; i += ode_ncells) {
 
-#ifdef USE_CUDA_SUNDIALS_PP
+#ifdef AMREX_USE_CUDA
             fabcost += react(
               rY_in + i * (NUM_SPECIES + 1), rY_src_in + i * NUM_SPECIES,
-              re_in + i, re_src_in + i, &dt, &current_time, &reactor_type,
-              &ode_ncells, amrex::Gpu::gpuStream());
+              re_in + i, re_src_in + i, &dt, &current_time, reactor_type,
+              ode_ncells, amrex::Gpu::gpuStream());
 #else
             fabcost += react(
               rY_in + i * (NUM_SPECIES + 1), rY_src_in + i * NUM_SPECIES,
-              re_in + i, re_src_in + i, &dt, &current_time);
+              re_in + i, re_src_in + i, dt, current_time);
 #endif
           }
           fabcost = fabcost / ncells;
@@ -281,8 +286,22 @@ PeleC::react_state(
                 a(i, j, k, UEDEN);
             });
 
-          if (do_react_load_balance || do_mol_load_balance) {
-            get_new_data(Work_Estimate_Type)[mfi].plus<amrex::RunOn::Device>(w);
+#ifdef AMREX_USE_CUDA
+          cudaFree(rY_in);
+          cudaFree(rY_src_in);
+          cudaFree(re_in);
+          cudaFree(re_src_in);
+#else
+          delete[] rY_in;
+          delete[] rY_src_in;
+          delete[] re_in;
+          delete[] re_src_in;
+#endif
+          wt = (amrex::ParallelDescriptor::second() - wt) / bx.d_numPts();
+
+          if (do_react_load_balance) {
+            get_new_data(Work_Estimate_Type)[mfi].plus<amrex::RunOn::Device>(
+              wt, vbox);
           }
 #else
           amrex::Abort(
