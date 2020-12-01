@@ -16,6 +16,7 @@ option(PELEC_ENABLE_TESTS "Enable regression and unit tests" OFF)
 option(PELEC_ENABLE_MASA "Enable tests that require MASA" OFF)
 option(PELEC_ENABLE_FCOMPARE "Enable building fcompare when not testing" OFF)
 option(PELEC_ENABLE_FCOMPARE_FOR_TESTS "Check test plots against gold files" OFF)
+set(PELEC_PRECISION "DOUBLE" CACHE STRING "Floating point precision SINGLE or DOUBLE")
 
 #Options for performance
 option(PELEC_ENABLE_MPI "Enable MPI" OFF)
@@ -42,7 +43,7 @@ if(PELEC_ENABLE_CUDA)
 endif()
 
 if((NOT PELEC_DIM EQUAL 3) AND PELEC_ENABLE_AMREX_EB)
-  message(FATAL_ERROR "EB is only supported in 3D.")
+  message(FATAL_ERROR "EB is only supported in 3D")
 endif()
 
 ########################### AMReX #####################################
@@ -75,6 +76,13 @@ message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
 message(STATUS "CMAKE_CXX_COMPILER_ID = ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "CMAKE_CXX_COMPILER_VERSION = ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+message(STATUS "PELEC_PRECISION = ${PELEC_PRECISION}")
+if("${PELEC_PRECISION}" STREQUAL "SINGLE" AND PELEC_ENABLE_AMREX_EB)
+  message(FATAL_ERROR "Single precision currently not allowed in AMReX with EB enabled")
+endif()
+if("${PELEC_PRECISION}" STREQUAL "SINGLE" AND PELEC_ENABLE_MASA)
+  message(FATAL_ERROR "Single precision currently not allowed in AMReX with MASA enabled")
+endif()
 
 # Turn on rpath stuff
 include(${CMAKE_SOURCE_DIR}/CMake/SetRpath.cmake)
